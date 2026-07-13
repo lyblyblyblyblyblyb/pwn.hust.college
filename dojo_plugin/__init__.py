@@ -24,6 +24,8 @@ from .models import Dojos, DojoChallenges, Belts, Emojis
 from .config import DOJO_HOST, bootstrap
 from .utils import unserialize_user_flag, render_markdown
 from .utils.awards import update_awards
+from .utils.query_timer import init_query_timer
+from .utils.request_logging import setup_logging, setup_trace_id_tracking, setup_uncaught_error_logging
 from .pages.dojos import dojos, dojos_override
 from .pages.dojo import dojo
 from .pages.workspace import workspace
@@ -163,7 +165,13 @@ def load(app):
     app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
         '/metrics': make_wsgi_app()
     })
-    
+
+    # 初始化请求日志与追踪模块
+    init_query_timer()
+    setup_logging(app)
+    setup_trace_id_tracking(app)
+    setup_uncaught_error_logging(app)
+
     app.jinja_env.filters["markdown"] = render_markdown
 
     register_admin_plugin_menu_bar("Dojos", "/admin/dojos")

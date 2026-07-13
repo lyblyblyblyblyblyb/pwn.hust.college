@@ -197,6 +197,7 @@ services:
       - dhparam:/etc/nginx/dhparam
       - certs:/etc/nginx/certs:ro
       - ./nginx-proxy/etc/nginx/vhost.d:/etc/nginx/vhost.d
+      - ./nginx-proxy/etc/nginx/conf.d/pwn-trace-id.conf:/etc/nginx/conf.d/pwn-trace-id.conf:ro
       - ./nginx-proxy/etc/passwd:/etc/passwd:ro
       - ./data/homes:/var/homes:shared
       - /var/run/docker.sock:/tmp/${DOCKER_PSLR}/docker.sock:ro
