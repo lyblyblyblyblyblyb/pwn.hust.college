@@ -21,7 +21,7 @@ from CTFd.plugins.challenges import CHALLENGE_CLASSES, BaseChallenge
 from CTFd.plugins.flags import FLAG_CLASSES, BaseFlag, FlagException
 
 from .models import Dojos, DojoChallenges, Belts, Emojis
-from .config import DOJO_HOST, bootstrap
+from .config import DOJO_HOST, bootstrap, ENABLE_SSO
 from .utils import unserialize_user_flag, render_markdown
 from .utils.awards import update_awards
 from .utils.query_timer import init_query_timer
@@ -32,6 +32,7 @@ from .pages.workspace import workspace
 from .pages.desktop import desktop
 from .pages.users import users
 from .pages.sso_login import sso
+sso_enabled = ENABLE_SSO
 from .pages.settings import settings_override
 from .pages.course import course
 from .pages.writeups import writeups
@@ -144,7 +145,8 @@ def load(app):
     app.register_blueprint(dojo)
     app.register_blueprint(workspace)
     app.register_blueprint(desktop)
-    app.register_blueprint(sso)
+    if ENABLE_SSO:
+        app.register_blueprint(sso)
     app.register_blueprint(users)
     app.register_blueprint(course)
     app.register_blueprint(writeups)

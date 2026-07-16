@@ -38,7 +38,9 @@
         {% if registration_visible() %}
         {% endif %}
 
+        {% if Configs.sso_enabled %}
         {{ navitem("统一身份认证", url_for("pwncollege_sso.cas_login", next=request.full_path), "fa-sign-in-alt") }}
+        {% endif %}
         {% endif %}
 
         <li class="nav-item">

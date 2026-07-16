@@ -1,6 +1,7 @@
-from flask import Blueprint, url_for, request, redirect
+from flask import Blueprint, url_for, request, redirect, abort
 from CTFd.utils.security.auth import login_user
 
+from ..config import ENABLE_SSO
 from ..api.v1.sso_login import CASBackend
 
 sso = Blueprint("pwncollege_sso", __name__)
@@ -8,6 +9,8 @@ sso = Blueprint("pwncollege_sso", __name__)
 
 @sso.route('/cas-login/')
 def cas_login():
+    if not ENABLE_SSO:
+        abort(501)
     ticket = request.args.get('ticket')
     casbackend = CASBackend()
     if ticket:
