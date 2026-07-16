@@ -4,6 +4,7 @@ services:
       context: ./challenge
       target: challenge-final
       dockerfile: Dockerfile_${ARCH}
+      network: host
       args:
         - DEFAULT_INSTALL_SELECTION=${DEFAULT_INSTALL_SELECTION}
         - INSTALL_AFL=${INSTALL_AFL:-${DEFAULT_INSTALL_SELECTION}}
@@ -51,6 +52,9 @@ services:
         else
           FLASK_ENV=development WERKZEUG_DEBUG_PIN=off flask run --host 0.0.0.0 --port 8000;
         fi
+    extra_hosts:
+      - "example.com:93.184.216.34"
+      - "public-lumina.hex-rays.com:54.195.134.223"
     ulimits:
         nofile:
             soft: 32768
@@ -89,6 +93,8 @@ services:
       - DISCORD_CHANNEL_ID_NOTIFICATION=${DISCORD_CHANNEL_ID_NOTIFICATION}
       - OLLAMA_BASE_URLS=${OLLAMA_BASE_URLS}
       - OPENAI_API_BASE_URL=${OPENAI_API_BASE_URL}
+      - ENABLE_SSO=${ENABLE_SSO}
+      - CAS_REDIRECT_URL=${CAS_REDIRECT_URL}
     volumes:
       - ./data:/var/data
       - ./data/CTFd/logs:/var/log/CTFd

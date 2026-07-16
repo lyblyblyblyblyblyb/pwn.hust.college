@@ -27,6 +27,13 @@ DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
 DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 DISCORD_GUILD_ID = os.getenv("DISCORD_GUILD_ID")
 
+# SSO/CAS configuration (optional — disabled by default, enable with ENABLE_SSO=True)
+ENABLE_SSO = bool(ast.literal_eval(os.getenv("ENABLE_SSO") or "False"))
+CAS_SERVER_URL = os.getenv("CAS_SERVER_URL", "https://pass.hust.edu.cn/cas/login")
+CAS_REDIRECT_URL = os.getenv("CAS_REDIRECT_URL")
+CAS_EMAIL_SUFFIX = os.getenv("CAS_EMAIL_SUFFIX", "@hust.edu.cn")
+CAS_VERSION = os.getenv("CAS_VERSION", "2")
+
 def create_seccomp():
     seccomp = json.load(pathlib.Path("/etc/docker/seccomp.json").open())
 
@@ -115,6 +122,7 @@ def bootstrap():
     set_config("account_visibility", "public")
 
     set_config("ctf_theme", "dojo_theme")
+    set_config("sso_enabled", ENABLE_SSO)
 
     if not config.is_setup():
         admin = Admins(

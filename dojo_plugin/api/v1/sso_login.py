@@ -7,25 +7,9 @@ from CTFd.utils import user as current_user
 from CTFd.utils.helpers import error_for, get_errors, markup
 from CTFd.utils.logging import log
 
-
 from xml.etree import ElementTree
 
-class Settings:
-    def __init__(self):
-        self.DEBUG = True
-        self.CAS_SERVER_URL = 'https://pass.hust.edu.cn/cas/login'
-        self.CAS_ADMIN_PREFIX = None
-        self.CAS_EXTRA_LOGIN_PARAMS = None
-        self.CAS_IGNORE_REFERER = False
-        self.CAS_LOGOUT_COMPLETELY = True
-        self.CAS_REDIRECT_URL = 'http://pwn.cse.hust.edu.cn/cas-login/'
-        self.CAS_RETRY_LOGIN = False
-        self.CAS_VERSION = '2'
-
-    def __getattr__(self, item):
-        raise AttributeError(f'Setting {item} not found')
-
-settings = Settings()
+from ...config import CAS_SERVER_URL, CAS_REDIRECT_URL, CAS_EMAIL_SUFFIX, CAS_VERSION
 
 
 
@@ -33,7 +17,7 @@ def _verify_cas2(ticket, service):
     """Verifies CAS 2.0+ XML-based authentication ticket."""
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
     params = {'ticket': ticket, 'service': service}
-    url = urljoin(settings.CAS_SERVER_URL, 'proxyValidate') + '?' + urlencode(params)
+    url = urljoin(CAS_SERVER_URL, 'proxyValidate') + '?' + urlencode(params)
     request = Request(url, headers=headers)
 
     try:
@@ -52,7 +36,7 @@ def _verify_cas2(ticket, service):
 def register_sso(studentID):
     errors = get_errors()
     name = studentID.strip()
-    email_address = studentID.strip().lower()+"@hust.edu.cn"
+    email_address = studentID.strip().lower() + CAS_EMAIL_SUFFIX
     password = ""
     bracket_id = None
     oauth_id = int(studentID[1:])
@@ -100,7 +84,7 @@ class CASBackend(object):
     """CAS authentication backend"""
 
     def authenticate(self,ticket):
-        service = settings.CAS_REDIRECT_URL
+        service = CAS_REDIRECT_URL
         username = _verify_cas2(ticket, service)
         user = Users.query.filter_by(oauth_id=username[1:]).first()
         
@@ -116,6 +100,5 @@ class CASBackend(object):
 
     def get_login_url():
         """Generates CAS login URL"""
-        params = {'service': settings.CAS_REDIRECT_URL}
-        #return urlopen(settings.CAS_SERVER_URL)
-        return urljoin(settings.CAS_SERVER_URL, 'login') + '?' + urlencode(params)
+        params = {'service': CAS_REDIRECT_URL}
+        return urljoin(CAS_SERVER_URL, 'login') + '?' + urlencode(params)
