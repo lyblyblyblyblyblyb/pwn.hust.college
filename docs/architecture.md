@@ -4,8 +4,6 @@
 
 pwn.hust.college 平台基于 pwn.college 的 DOJO 架构开发，定位为实践型网络安全教育平台。平台采用夺旗赛（CTF）竞赛模式，学习者通过解决挑战获取 flag 以证明技能掌握。与传统平台不同，平台提供预配置环境，支持浏览器或 SSH 访问，学习者可直接投入实战挑战，无需自行搭建环境。平台整体作为热门 CTFd 平台的"插件"实现，CTFd 提供用户、挑战及提交 flag 等基础功能，平台在此基础上扩展，允许教师创建挑战，学生在浏览器式工作区环境中解题。
 
-pwn.hust.college 是 pwn.college 的华中科技大学定制分支，在继承上游全部功能的基础上，增加了华科统一身份认证（SSO）、KOOK/Discord 聊天平台集成、AI 助教（sensai）、Prometheus/Grafana 监控栈、请求日志与追踪等 HUST 特有功能。
-
 ## 基础设施容器化
 
 平台组件由 **docker compose** 管理，管理员可在裸机上启动，实际部署时整个基础设施运行在一个 docker 容器（称为"外部 docker"或 `dojo` 容器）内。该容器通过 `Dockerfile` 构建，基于 Ubuntu 22.04，内部安装 Docker CE，形成 **Docker-in-Docker** 架构。
@@ -114,65 +112,8 @@ CTFd 使用 **SQLAlchemy ORM** 访问数据库，可通过 `dojo flask` 进入 P
 
 ## 工作区访问
 
-- **HTTP 访问**：`nginx-proxy` 反向代理 → CTFd → 插件启动/接入用户容器。支持三种工作区：VSCode（浏览器内代码编辑器+终端）、桌面环境（基于 XFCE + noVNC）、帮助（sensai AI 助教）。
+- **HTTP 访问**：`nginx-proxy` 反向代理 → CTFd → 插件启动/接入用户容器。支持三种工作区：VSCode（浏览器内代码编辑器+终端）、桌面环境（基于 XFCE + noVNC）、帮助（AI 助教）。
 - **SSH 访问**：端口 22 由 `sshd` 容器处理，该容器检查提供的公钥与数据库中的密钥表，检索对应的用户，并通过 `docker exec` 进入该用户正在运行的挑战容器。
-
-## HUST 特有功能
-
-### SSO 统一身份认证
-
-平台集成华中科技大学统一身份认证系统（CAS 协议），通过 `ENABLE_SSO` 环境变量控制启用。启用时：
-- `/cas-login/` 路由处理认证：重定向到 `pass.hust.edu.cn` 登录页，用户登录后携带 ticket 回调，后端验证 ticket并自动注册/登录用户。
-- 导航栏显示"统一身份认证"按钮，登录页显示 SSO 提示。
-- 新用户自动以 `学号@hust.edu.cn` 格式注册，无需手动创建账户。
-
-相关文件：`pages/sso_login.py`、`api/v1/sso_login.py`。
-
-### KOOK / Discord 聊天集成
-
-平台支持 **KOOK**（国内聊天平台）和 **Discord** 两种聊天机器人集成。主要功能：
-- 用户完成道馆模块时，机器人在奖励频道发送祝贺消息。
-- 用户绑定 KOOK/Discord 账号后，新成员在欢迎频道收到欢迎信息。
-- 通过 `KOOK_*` 和 `DISCORD_*` 环境变量配置，未配置时对应功能自动禁用。
-
-相关文件：`pages/kook.py`、`utils/kook.py`、`pages/discord.py`、`utils/discord.py`。
-
-### sensai AI 助教
-
-平台集成了基于 **Open WebUI**（`sensai` 分支）的 AI 助教系统，部署在 `open-webui` 容器中。学生在挑战页面点击"帮助"按钮可与大语言模型交互，获取挑战相关的提示和指导。通过 `OLLAMA_BASE_URLS` 或 `OPENAI_API_BASE_URL` 配置后端 LLM 服务。
-
-相关文件：`pages/sensai.py`。
-
-### Prometheus / Grafana 监控
-
-平台内置完整的监控栈：
-
-- **Prometheus** 采集和存储时序指标数据。
-- **Grafana** 提供可视化仪表盘，通过 `/monitoring/` 子路径访问。
-- 五个专用 exporter：`node-exporter`（系统资源）、`mysql-exporter`（数据库）、`redis-exporter`（缓存）、`nginx-exporter`（Web 服务器）。
-- 自定义指标（`prometheus_metrics.py`）：HTTP 请求计数与延迟、挑战解题计数、用户注册/登录计数。
-
-配置目录：`monitoring/prometheus/`（采集规则）、`monitoring/grafana/`（仪表盘和数据源）。
-
-### 请求日志与追踪
-
-平台对所有 HTTP 请求进行结构化日志记录，包含以下特性：
-- 每个请求携带 `trace_id`（由 nginx 生成并通过 `PWN-Trace-ID` 头部传播），便于追踪完整请求链路。
-- 自定义日志格式，包含 `trace_id`、`user_id`、`remote_addr`、请求耗时等信息。
-- 集中配置 werkzeug、gunicorn、CTFd 等组件的日志处理器。
-- 未捕获异常的详细日志记录。
-
-相关文件：`utils/request_logging.py`、`utils/query_timer.py`。
-
-### 奖励体系
-
-平台实现了绶带晋级 + 表情徽章的双轨奖励系统：
-
-- **绶带（Belts）**：8 级绶带（橙→黄→绿→紫→蓝→棕→红→黑），通过完成指定道馆线性晋级。绶带页面 `/belts` 按颜色分组展示排名。
-- **徽章（Emojis）**：完成道馆或达到解题数门槛时获得。在排行榜上显示。
-- 每次解题触发 `update_awards()`：检查绶带晋级条件、同步 emoji 状态、发送 KOOK/Discord 通知。
-
-相关文件：`utils/awards.py`、`models/__init__.py`（Belts/Emojis 模型）、`api/v1/scoreboard.py`、`pages/belts.py`。
 
 ## 网络安全
 
